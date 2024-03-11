@@ -1,7 +1,6 @@
 package gui;
 
 import util.RenderingPipeline;
-import util.Vec3;
 import world.Triangle3D;
 
 import javax.swing.*;
@@ -10,15 +9,14 @@ import java.awt.*;
 import world.World;
 import world.objects.Object3D;
 import world.objects.Orientation;
-import world.objects.Pyramid;
 
 public class Window extends JComponent {
     private static final Color COLOR_BACKGROUND = Color.BLACK;
     private static final Color COLOR_ORIENTATION_OUTLINE = new Color(1.0f, 1.0f, 1.0f, 0.25f);
     private static final Color COLOR_ORIENTATION_FILL = new Color(1.0f, 1.0f, 1.0f, 0.125f);
-    private static final Color COLOR_OBJECT_OUTLINE = new Color(1.0f, .0f, 1.0f);;
+    private static final Color COLOR_OBJECT_OUTLINE = new Color(1.0f, .0f, 1.0f);
     private static final Color COLOR_OBJECT_FILL = new Color(1.0f, .0f, 1.0f, 0.25f);
-    private Orientation orientation;
+    private final Orientation orientation;
     private World world;
 
     public Window() {
@@ -35,9 +33,7 @@ public class Window extends JComponent {
         g.fillRect(0, 0, getWidth(), getHeight());
 
         drawObject3D(g, orientation, COLOR_ORIENTATION_OUTLINE, COLOR_ORIENTATION_FILL);
-        if (world == null) {
-            return;
-        } else {
+        if (world != null) {
             for (Object3D object: world.getWorldObjects()) {
                 drawObject3D(g, object, COLOR_OBJECT_OUTLINE, COLOR_OBJECT_FILL);
             }
@@ -53,6 +49,7 @@ public class Window extends JComponent {
                 90,
                 ((double) getHeight())/getWidth()
         );
+
         for (Triangle3D triangle : triangles) {
             double width = getWidth() / 2.0;
             double height = getHeight() / 2.0;

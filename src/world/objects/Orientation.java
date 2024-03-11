@@ -14,14 +14,16 @@ public class Orientation extends Object3D {
     @Override
     protected void initializeLocalSpaceTriangles() {
         List<Triangle3D> triangles = new LinkedList<>();
-        Vec3 xOff = new Vec3(1, 0, 0);
-        Vec3 yOff = new Vec3(0, 0, 1);
-        Vec3 xyOff = new Vec3(1, 0, 1);
+        int size = 50;
+        double scale = 4;
 
-        int size = 250;
+        Vec3 xOff = new Vec3(scale, 0, 0);
+        Vec3 yOff = new Vec3(0, 0, scale);
+        Vec3 xyOff = new Vec3(scale, 0, scale);
+
         for(int i = -size/2; i < size/2; i++) {
             for (int j = -size/2; j < size/2; j++) {
-                Vec3 origin = new Vec3(i, -5, j);
+                Vec3 origin = new Vec3(i * scale, 0, j * scale);
                 Vec3 originXOff = origin.add(xOff);
                 Vec3 originYOff = origin.add(yOff);
                 Vec3 originXYOff = origin.add(xyOff);

@@ -1,26 +1,21 @@
 package util;
 
-import world.*;  //java.world.*??
-import util.*;
+import world.Camera;
+import world.Triangle3D;
+import world.Triangle4D;
 import world.objects.Object3D;
 
-import java.security.KeyStore;
 import java.util.LinkedList;
-
+import java.util.List;
 
 public class RenderingPipeline {
     public static Triangle3D[] runPipeline(
-            Triangle3D[] triangles,
-            Camera camera,
-            double zNear,
-            double zFar,
-            double fov,
-            double aspectRatio) {
-        Triangle3D[] cameraSpaceTriangles = applyCameraTransform(triangles, camera);
-        Triangle4D[] projectedTriangles = applyProjectionMatrix(cameraSpaceTriangles, zNear, zFar, fov, aspectRatio);
-        Triangle4D[] clippedTriangles = applyClipping(projectedTriangles);
-        Triangle3D[] dividedTriangles = applyPerspectiveDivide(clippedTriangles);
-        return dividedTriangles;
+            Triangle3D[] triangles, Camera camera,
+            double zNear, double zFar, double fov, double aspectRatio) {
+        Triangle3D[] cameraSpaceTriangles   = applyCameraTransform(triangles, camera);
+        Triangle4D[] projectedTriangles     = applyProjectionMatrix(cameraSpaceTriangles, zNear, zFar, fov, aspectRatio);
+        Triangle4D[] clippedTriangles       = applyClipping(projectedTriangles);
+        return applyPerspectiveDivide(clippedTriangles);
     }
 
     public static Triangle3D[] applyCameraTransform(Triangle3D[] triangles, Camera camera) {
@@ -30,13 +25,12 @@ public class RenderingPipeline {
         boolean doPositionTransform = !(position.x == 0 && position.y == 0 && position.z == 0);
         boolean doOrientationTransform = !(orientation.x == 0 && orientation.y == 0 && orientation.z == 0);
         if (!doPositionTransform && !doOrientationTransform)
-            return triangles; // alt.: triangles.copy()
+            return triangles;
 
         Triangle3D[] cameraSpaceTriangles = triangles.clone();
-        if (doOrientationTransform)
-            cameraSpaceTriangles = rotate(cameraSpaceTriangles, orientation);
 
         if (doPositionTransform) {
+            position = position.scale(-1);
             for (int i = 0; i < cameraSpaceTriangles.length; i++) {
                 Vec3[] vertices = cameraSpaceTriangles[i].getVertices();
                 cameraSpaceTriangles[i] = new Triangle3D(
@@ -47,15 +41,16 @@ public class RenderingPipeline {
             }
         }
 
+        if (doOrientationTransform) {
+            cameraSpaceTriangles = rotate(cameraSpaceTriangles, orientation);
+        }
+
         return cameraSpaceTriangles;
     }
 
     public static Triangle4D[] applyProjectionMatrix(
             Triangle3D[] triangles,
-            double zNear,
-            double zFar,
-            double fov,
-            double aspectRatio) {
+            double zNear, double zFar, double fov, double aspectRatio) {
         double rt = Math.tan(Math.toRadians(fov)/ 2)*zNear;
         double xf = (2 * zNear) / (2 * rt) * aspectRatio;
         double yf = (2 * zNear) / (2 * rt);
@@ -89,7 +84,7 @@ public class RenderingPipeline {
     }
 
     public static Triangle4D[] applyClipping(Triangle4D[] triangles) {
-        LinkedList<Triangle4D> clippedTriangleList = new LinkedList<>();
+        List<Triangle4D> clippedTriangleList = new LinkedList<>();
         for (Triangle4D triangle: triangles) {
             boolean doClip = false;
             for (Vec4 vertex: triangle.getVertices()) {
@@ -132,19 +127,39 @@ public class RenderingPipeline {
 
     public static Triangle3D[] transformLocalSpace(Triangle3D[] triangles, Object3D object) {
         Vec3 orientation = object.getOrientation();
-        Vec3 origin = object.getPosition();
+        Vec3 position = object.getPosition();
         double size = object.getSize();
 
-        Triangle3D[] rotatedWorldSpaceTriangles = rotate(triangles, orientation);
-        Triangle3D[] localSpaceTriangles = new Triangle3D[triangles.length];
+        boolean doPositionTransform = !(position.x == 0 && position.y == 0 && position.z == 0);
+        boolean doOrientationTransform = !(orientation.x == 0 && orientation.y == 0 && orientation.z == 0);
 
-        for (int i = 0; i < rotatedWorldSpaceTriangles.length; i++) {
-            Vec3[] vertices = rotatedWorldSpaceTriangles[i].getVertices();
-            localSpaceTriangles[i] = new Triangle3D(
-                    vertices[0].scale(size).add(origin),
-                    vertices[1].scale(size).add(origin),
-                    vertices[2].scale(size).add(origin)
-            );
+        if (!doPositionTransform && !doOrientationTransform) return triangles;
+
+        Triangle3D[] localSpaceTriangles;
+        if (doOrientationTransform) {
+            localSpaceTriangles = rotate(triangles, orientation);
+        } else {
+            localSpaceTriangles = triangles.clone();
+        }
+
+        if (doPositionTransform) {
+            for (int i = 0; i < localSpaceTriangles.length; i++) {
+                Vec3[] vertices = localSpaceTriangles[i].getVertices();
+                localSpaceTriangles[i] = new Triangle3D(
+                        vertices[0].scale(size).add(position),
+                        vertices[1].scale(size).add(position),
+                        vertices[2].scale(size).add(position)
+                );
+            }
+        } else {
+            for (int i = 0; i < localSpaceTriangles.length; i++) {
+                Vec3[] vertices = localSpaceTriangles[i].getVertices();
+                localSpaceTriangles[i] = new Triangle3D(
+                        vertices[0].scale(size),
+                        vertices[1].scale(size),
+                        vertices[2].scale(size)
+                );
+            }
         }
 
         return localSpaceTriangles;

@@ -1,20 +1,20 @@
 package gui.components;
 
-import world.Camera;
+import world.objects.Object3D;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class CameraController extends JPanel {
+public class ObjectController extends JPanel {
     private final Vec3Controller positionController;
     private final Vec3Controller orientationController;
 
-    public CameraController() {
+    public ObjectController() {
         positionController = new Vec3Controller();
         orientationController = new Vec3Controller();
 
         setLayout(new BorderLayout());
-        add(new JLabel("Camera Controller"), BorderLayout.NORTH);
+        add(new JLabel("Object Controller"), BorderLayout.NORTH);
 
         JPanel wrapperPanel = new JPanel();
         wrapperPanel.setLayout(new GridLayout(2, 0));
@@ -24,8 +24,8 @@ public class CameraController extends JPanel {
         add(wrapperPanel, BorderLayout.CENTER);
     }
 
-    public void setCamera(Camera camera) {
-        positionController.setVec3(camera.getPosition());
-        orientationController.setVec3(camera.getOrientation());
+    public void setObject(Object3D object) {
+        positionController.setVec3(object.getPosition());
+        orientationController.setVec3(object.getOrientation());
     }
 }

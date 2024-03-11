@@ -1,6 +1,5 @@
 package world.objects;
 
-import util.RenderingPipeline;
 import util.Vec3;
 import world.Triangle3D;
 
@@ -10,25 +9,33 @@ public class Cube extends Object3D {
     }
 
     public Cube() {
-        super();
+        this(new Vec3(0, 0, 0), new Vec3(0, 0, 0), 1);
     }
 
     @Override
     protected void initializeLocalSpaceTriangles() {
-        Vec3 v0 = new Vec3(-1, -1, -1); // VLU
-        Vec3 v1 = new Vec3(1, -1, -1);  // VRU
-        Vec3 v2 = new Vec3(-1, 1, -1);  // VLO
-        Vec3 v3 = new Vec3(1, 1, -1);   // VRO
-
-        Vec3 v4 = new Vec3(-1, -1, 1);  // HLU
-        Vec3 v5 = new Vec3(1, -1, 1);   // HRU
-        Vec3 v6 = new Vec3(-1, 1, 1);   // HLO
-        Vec3 v7 = new Vec3(1, 1, 1);    // HRO
+        Vec3 v1 = new Vec3(-1, -1, -1);
+        Vec3 v2 = new Vec3(1, -1, -1);
+        Vec3 v3 = new Vec3(-1, 1, -1);
+        Vec3 v4 = new Vec3(1, 1, -1);
+        Vec3 v5 = new Vec3(-1, -1, 1);
+        Vec3 v6 = new Vec3(1, -1, 1);
+        Vec3 v7 = new Vec3(-1, 1, 1);
+        Vec3 v8 = new Vec3(1, 1, 1);
 
         localSpaceTriangles = new Triangle3D[] {
-                // Back
-                new Triangle3D(v0, v1, v3),
-                new Triangle3D(v0, v1, v2)
+                new Triangle3D(v1, v2, v4),
+                new Triangle3D(v1, v3, v4),
+                new Triangle3D(v5, v6, v7),
+                new Triangle3D(v6, v7, v8),
+                new Triangle3D(v1, v3, v5),
+                new Triangle3D(v3, v5, v7),
+                new Triangle3D(v2, v6, v8),
+                new Triangle3D(v2, v4, v8),
+                new Triangle3D(v4, v3, v7),
+                new Triangle3D(v4, v7, v8),
+                new Triangle3D(v1, v5, v6),
+                new Triangle3D(v1, v2, v6),
         };
     }
 }

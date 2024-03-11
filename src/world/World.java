@@ -2,19 +2,17 @@ package world;
 
 import util.Vec3;
 import world.objects.Object3D;
-import world.objects.Orientation;
-import world.objects.Pyramid;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class World {
-    private List<Object3D> worldObjects;
-    private Camera camera;
+    private final List<Object3D> worldObjects;
+    private final Camera camera;
 
     public World() {
         worldObjects = new ArrayList<>();
-        camera = new Camera();
+        camera = new Camera(new Vec3(0, 10, 0), new Vec3(0, 0, 0));
     }
 
     public void add(Object3D object3D) {
