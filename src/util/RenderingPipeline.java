@@ -4,194 +4,188 @@ import world.*;  //java.world.*??
 import util.*;
 import world.objects.Object3D;
 
+import java.security.KeyStore;
+import java.util.LinkedList;
+
 
 public class RenderingPipeline {
-    //eingabe 3D Triangle, Ausgabe 4D Triangle
-    public static Triangle4D[] Projection(Triangle3D[] array3D){
+    public static Triangle3D[] runPipeline(
+            Triangle3D[] triangles,
+            Camera camera,
+            double zNear,
+            double zFar,
+            double fov,
+            double aspectRatio) {
+        Triangle3D[] cameraSpaceTriangles = applyCameraTransform(triangles, camera);
+        Triangle4D[] projectedTriangles = applyProjectionMatrix(cameraSpaceTriangles, zNear, zFar, fov, aspectRatio);
+        Triangle4D[] clippedTriangles = applyClipping(projectedTriangles);
+        Triangle3D[] dividedTriangles = applyPerspectiveDivide(clippedTriangles);
+        return dividedTriangles;
+    }
 
-        //Triangle4D[] array4D = new Triangle4D[array3D.length];
+    public static Triangle3D[] applyCameraTransform(Triangle3D[] triangles, Camera camera) {
+        Vec3 position = camera.getPosition();
+        Vec3 orientation = camera.getOrientation();
 
-        //2n/r-l,   0   ,    0    ,    0
-        //   0  , 2n/t-b,    0    ,    0
-        //   0  ,   0   , -f+n/f-n, -2fn/f-n
-        //   0  ,   0   ,   -1    ,    0
+        boolean doPositionTransform = !(position.x == 0 && position.y == 0 && position.z == 0);
+        boolean doOrientationTransform = !(orientation.x == 0 && orientation.y == 0 && orientation.z == 0);
+        if (!doPositionTransform && !doOrientationTransform)
+            return triangles; // alt.: triangles.copy()
 
-        //x*(2n/(r-l)) +      y*0     +        z*0      +      w*0        = x
-        //    x*0      + y*(2n/(t-b)) +        z*0      +      w*0        = y
-        //    x*0      +      y*0     + z*(-(f+n)/(f-n) + w*(-(2fn)/(f-n) = z
-        //    x*0      +      y*0     +       z*(-1)    +      w*0        = w
+        Triangle3D[] cameraSpaceTriangles = triangles.clone();
+        if (doOrientationTransform)
+            cameraSpaceTriangles = rotate(cameraSpaceTriangles, orientation);
 
-        //Math.tan(theta / 2.0) * zNear
-        //variablen werden am Anfang einmal festgelegt
+        if (doPositionTransform) {
+            for (int i = 0; i < cameraSpaceTriangles.length; i++) {
+                Vec3[] vertices = cameraSpaceTriangles[i].getVertices();
+                cameraSpaceTriangles[i] = new Triangle3D(
+                        vertices[0].add(position),
+                        vertices[1].add(position),
+                        vertices[2].add(position)
+                );
+            }
+        }
 
-        double n  = 1;
-        double f  = 1000;
-        double rt = Math.tan(Math.toRadians(45)/ 2)*n;
-        //double aspectRatio =
+        return cameraSpaceTriangles;
+    }
 
-        double xf = (2 * n) / (2 * rt); //* aspectRatio;
-        double yf = (2 * n) / (2 * rt);
-        double zf = -(f + n) / (f - n) + -2 * ((f * n) / (f - n));
+    public static Triangle4D[] applyProjectionMatrix(
+            Triangle3D[] triangles,
+            double zNear,
+            double zFar,
+            double fov,
+            double aspectRatio) {
+        double rt = Math.tan(Math.toRadians(fov)/ 2)*zNear;
+        double xf = (2 * zNear) / (2 * rt) * aspectRatio;
+        double yf = (2 * zNear) / (2 * rt);
+        double zf = -(zFar + zNear) / (zFar - zNear) + -2 * ((zFar * zNear) / (zFar - zNear));
         double wf = -1;
 
+        Triangle4D[] projectedTriangles = new Triangle4D[triangles.length];
+        for (int i = 0; i < triangles.length; i++) {
+            Triangle3D tri3 = triangles[i];
 
-        Triangle4D[] projectedTriangleBuffer = new Triangle4D[array3D.length];
+            Vec4 v1 = new Vec4(
+                    tri3.v1.x * xf,
+                    tri3.v1.y * yf,
+                    tri3.v1.z * zf,
+                    tri3.v1.z * wf);
+            Vec4 v2 = new Vec4(
+                    tri3.v2.x * xf,
+                    tri3.v2.y * yf,
+                    tri3.v2.z * zf,
+                    tri3.v2.z * wf);
+            Vec4 v3 = new Vec4(
+                    tri3.v3.x * xf,
+                    tri3.v3.y * yf,
+                    tri3.v3.z * zf,
+                    tri3.v3.z * wf);
 
-        for (int i = 0; i < array3D.length; i++) {
-            Triangle3D tri3 = array3D[i];
-
-            Vec4 V1 = new Vec4(
-                    tri3.V1.x * xf,
-                    tri3.V1.y * yf,
-                    tri3.V1.z * zf,
-                    tri3.V1.z * wf);
-            Vec4 V2 = new Vec4(
-                    tri3.V2.x * xf,
-                    tri3.V2.y * yf,
-                    tri3.V2.z * zf,
-                    tri3.V2.z * wf);
-            Vec4 V3 = new Vec4(
-                    tri3.V3.x * xf,
-                    tri3.V3.y * yf,
-                    tri3.V3.z * zf,
-                    tri3.V3.z * wf);
-            projectedTriangleBuffer[i] = new Triangle4D(V1, V2, V3);
+            projectedTriangles[i] = new Triangle4D(v1, v2, v3);
         }
 
-        return projectedTriangleBuffer;
-
-        /*double n  = 1;
-        double f  = 1000;
-        double rt = Math.tan(Math.toRadians(45)/ 2)*n;
-        //für 3D und 4D triangles array erschaffen und den für 3D (der in 4D gemacht werden soll) belget mit den übergebebeb triangles
-        Vec4[] vec4Array = new Vec4[3];
-        Vec3[] vec3Array = new Vec3[3];
-
-        vec3Array[0] = tri3D.V1;
-        vec3Array[1] = tri3D.V2;
-        vec3Array[2] = tri3D.V3;
-        // 3 mal (für jeden Vertex 1 mal) jeden Wert mit der Matrix multiplizieren, die Werte in ein 4D Vertex umwandeln und in dem array speichern
-        for(int i=0; i<3; i++) {
-
-            double x = vec3Array[i].x;
-            double y = vec3Array[i].y;
-            double z = vec3Array[i].z;
-            double w = 1;
-
-            double dx = x * ((2 * n) / (2 * rt));
-            double dy = y * ((2 * n) / (2 * rt));
-            double dz = z * ((-(f + n) / (f - n)) + (-2 * (f * n) / (f - n)));
-            double dw = z * (-1);
-
-            /*double xf = (2 * n) / (2 * Math.tan(Math.toRadians(45)/ 2)*n);
-            double yf = (2 * n) / (2 * Math.tan(Math.toRadians(45)/ 2)*n);
-            double zf = -(f + n) / (f - n) + -2 * ((f * n) / (f - n));
-            double wf = -1;
-
-
-            vec4Array[i] = new Vec4(dx, dy, dz, dw);
-            //vec4Array[i] = new Vec4(x*xf,y*yf, z*zf, w*wf);
-        }
-        //die Vertexe in ein 4D triangle umwandeln und returnen
-        Triangle4D tri4 = new Triangle4D(vec4Array[0], vec4Array[1], vec4Array[2]);
-
-
-        //return tri4;*/
+        return projectedTriangles;
     }
 
-    public static Triangle3D[] perspectiveDivide(Triangle4D[] array4D) {
+    public static Triangle4D[] applyClipping(Triangle4D[] triangles) {
+        LinkedList<Triangle4D> clippedTriangleList = new LinkedList<>();
+        for (Triangle4D triangle: triangles) {
+            boolean doClip = false;
+            for (Vec4 vertex: triangle.getVertices()) {
+                if (vertex.x > vertex.w) doClip = true;
+                if (-vertex.x > vertex.w) doClip = true;
+                if (vertex.y > vertex.w) doClip = true;
+                if (-vertex.y > vertex.w) doClip = true;
+            }
 
-        Triangle3D[] perspectiveDivedTriangle = new Triangle3D[array4D.length];
-
-        for (int i = 0; i < array4D.length; i++) {
-
-            Triangle4D tri4 = array4D[i];
-
-            Vec3 V1 = new Vec3(
-                    tri4.V1.x / tri4.V1.w,
-                    tri4.V1.y / tri4.V1.w,
-                    tri4.V1.z / tri4.V1.w);
-
-            Vec3 V2 = new Vec3(
-                    tri4.V2.x / tri4.V2.w,
-                    tri4.V2.y / tri4.V2.w,
-                    tri4.V2.z / tri4.V2.w);
-
-            Vec3 V3 = new Vec3(
-                    tri4.V3.x / tri4.V3.w,
-                    tri4.V3.y / tri4.V3.w,
-                    tri4.V3.z / tri4.V3.w);
-
-            perspectiveDivedTriangle[i] = new Triangle3D(V1, V2, V3);
+            if (!doClip) clippedTriangleList.add(triangle);
         }
+
+        return clippedTriangleList.toArray(new Triangle4D[0]);
+    }
+
+    public static Triangle3D[] applyPerspectiveDivide(Triangle4D[] triangles) {
+        Triangle3D[] perspectiveDivedTriangle = new Triangle3D[triangles.length];
+        for (int i = 0; i < triangles.length; i++) {
+            Triangle4D tri4 = triangles[i];
+            Vec3 v1 = new Vec3(
+                    tri4.v1.x / tri4.v1.w,
+                    tri4.v1.y / tri4.v1.w,
+                    tri4.v1.z / tri4.v1.w);
+
+            Vec3 v2 = new Vec3(
+                    tri4.v2.x / tri4.v2.w,
+                    tri4.v2.y / tri4.v2.w,
+                    tri4.v2.z / tri4.v2.w);
+
+            Vec3 v3 = new Vec3(
+                    tri4.v3.x / tri4.v3.w,
+                    tri4.v3.y / tri4.v3.w,
+                    tri4.v3.z / tri4.v3.w);
+
+            perspectiveDivedTriangle[i] = new Triangle3D(v1, v2, v3);
+        }
+
         return perspectiveDivedTriangle;
-
-       /* double x1 = V1.x;
-        double y1 = V1.y;
-        double z1 = V1.z;
-        double w1 = V1.w;
-
-        Vec3 vec1 = new Vec3(x1/w1, y1/w1, z1/w1);
-
-        double x2 = V2.x;
-        double y2 = V2.y;
-        double z2 = V2.z;
-        double w2 = V2.w;
-
-        Vec3 vec2 = new Vec3(x2/w2, y2/w2, z2/w2);
-
-        double x3 = V3.x;
-        double y3 = V3.y;
-        double z3 = V3.z;
-        double w3 = V3.w;
-
-        Vec3 vec3 = new Vec3(x3/w3, y3/w3, z3/w3);
-
-        //die punkte in 3D vertexe umwandeln und diese in ein 3D triangle
-
-        return new Triangle3D(vec1, vec2, vec3);*/
-
     }
 
-    public static Triangle3D[] transformToWorldSpace(Triangle3D[] triangles, Object3D object){
-
+    public static Triangle3D[] transformLocalSpace(Triangle3D[] triangles, Object3D object) {
+        Vec3 orientation = object.getOrientation();
+        Vec3 origin = object.getPosition();
         double size = object.getSize();
-        Vec3 origin = object.getOrigin();
-        Vec3 oriantation = object.getOrientation();
-        Triangle3D[] fertig = new Triangle3D[triangles.length];
 
-        for(int i=0; i< triangles.length; i++){
-            Triangle3D tmp = triangles[i];
-            Vec3 V1 = rotateVertex(tmp.V1, oriantation).scale(size).add(origin);
-            Vec3 V2 = rotateVertex(tmp.V2, oriantation).scale(size).add(origin);
-            Vec3 V3 = rotateVertex(tmp.V3, oriantation).scale(size).add(origin);
+        Triangle3D[] rotatedWorldSpaceTriangles = rotate(triangles, orientation);
+        Triangle3D[] localSpaceTriangles = new Triangle3D[triangles.length];
 
-            fertig[i] = new Triangle3D(V1, V2, V3);
+        for (int i = 0; i < rotatedWorldSpaceTriangles.length; i++) {
+            Vec3[] vertices = rotatedWorldSpaceTriangles[i].getVertices();
+            localSpaceTriangles[i] = new Triangle3D(
+                    vertices[0].scale(size).add(origin),
+                    vertices[1].scale(size).add(origin),
+                    vertices[2].scale(size).add(origin)
+            );
         }
-        return fertig;
+
+        return localSpaceTriangles;
     }
 
-    public static Vec3 rotateVertex(Vec3 vertex, Vec3 orientation){
+    private static Triangle3D[] rotate(Triangle3D[] triangles, Vec3 orientation) {
+        if (orientation.x == 0 && orientation.y == 0 && orientation.z == 0)
+            return triangles;
 
-        double cos_a = Math.cos(orientation.x);
-        double cos_b = Math.cos(orientation.y);
-        double cos_g = Math.cos(orientation.z);
+        Triangle3D[] rotatedTriangles = new Triangle3D[triangles.length];
+        double[] sin = new double[] {
+                Math.sin(orientation.z * Math.PI),
+                Math.sin(orientation.y * Math.PI),
+                Math.sin(orientation.x * Math.PI)};
 
-        double sin_a = Math.sin(orientation.x);
-        double sin_b = Math.sin(orientation.y);
-        double sin_g = Math.sin(orientation.z);
+        double[] cos = new double[] {
+                Math.cos(orientation.z * Math.PI),
+                Math.cos(orientation.y * Math.PI),
+                Math.cos(orientation.x * Math.PI)};
 
-        double dx = vertex.x * (cos_a * cos_b)
-                + vertex.y * (cos_a * sin_b * sin_g - sin_a * cos_g)
-                + vertex.z * (cos_a * sin_b * cos_g + sin_a * sin_g);
-        double dy = vertex.x * (sin_a * cos_b)
-                + vertex.y * (sin_a * sin_b * sin_g + cos_a * cos_g)
-                + vertex.z * (sin_a * sin_b * cos_g - cos_a * sin_g);
-        double dz = vertex.x * (-sin_b)
-                + vertex.y * (cos_b * sin_g)
-                + vertex.z * (cos_b * cos_g);
+        for (int i = 0; i < triangles.length; i++) {
+            Vec3[] vertices = triangles[i].getVertices();
+            Vec3 v0 = rotateVertex(vertices[0], sin, cos);
+            Vec3 v1 = rotateVertex(vertices[1], sin, cos);
+            Vec3 v2 = rotateVertex(vertices[2], sin, cos);
+            rotatedTriangles[i] = new Triangle3D(v0, v1, v2);
+        }
 
+        return rotatedTriangles;
+    }
+
+    private static Vec3 rotateVertex(Vec3 vertex, double[] sin, double[] cos) {
+        double dx = vertex.x * (cos[0] * cos[1])
+                + vertex.y * (cos[0] * sin[1] * sin[2] - sin[0] * cos[2])
+                + vertex.z * (cos[0] * sin[1] * cos[2] + sin[0] * sin[2]);
+        double dy = vertex.x * (sin[0] * cos[1])
+                + vertex.y * (sin[0] * sin[1] * sin[2] + cos[0] * cos[2])
+                + vertex.z * (sin[0] * sin[1] * cos[2] - cos[0] * sin[2]);
+        double dz = vertex.x * (-sin[1])
+                + vertex.y * (cos[1] * sin[2])
+                + vertex.z * (cos[1] * cos[2]);
         return new Vec3(dx, dy, dz);
     }
-
-    }
+}

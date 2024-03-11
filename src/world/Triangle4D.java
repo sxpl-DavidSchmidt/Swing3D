@@ -1,15 +1,20 @@
 package world;
 
+import util.Vec3;
 import util.Vec4;
 
 public class Triangle4D {
-    public Vec4 V1;
-    public Vec4 V2;
-    public Vec4 V3;
-    //4 vectoren belgen
-    public Triangle4D(Vec4 vector1, Vec4 vector2, Vec4 vector3) {
-        this.V1 = vector1;
-        this.V2 = vector2;
-        this.V3 = vector3;
+    public Vec4 v1;
+    public Vec4 v2;
+    public Vec4 v3;
+
+    public Triangle4D(Vec4 vec1, Vec4 vec2, Vec4 vec3) {
+        this.v1 = vec1;
+        this.v2 = vec2;
+        this.v3 = vec3;
+    }
+
+    public Vec4[] getVertices() {
+        return new Vec4[] {v1, v2, v3};
     }
 }
