@@ -44,8 +44,8 @@ public class Window extends JComponent {
         Triangle3D[] triangles = RenderingPipeline.runPipeline(
                 object.getTriangles(),
                 world.getCamera(),
-                1,
-                1000,
+                -1,
+                -100,
                 90,
                 ((double) getHeight())/getWidth()
         );

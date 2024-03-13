@@ -7,44 +7,35 @@ import world.objects.Object3D;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 public class RenderingPipeline {
     public static Triangle3D[] runPipeline(
             Triangle3D[] triangles, Camera camera,
             double zNear, double zFar, double fov, double aspectRatio) {
-        Triangle3D[] cameraSpaceTriangles   = applyCameraTransform(triangles, camera);
-        Triangle4D[] projectedTriangles     = applyProjectionMatrix(cameraSpaceTriangles, zNear, zFar, fov, aspectRatio);
-        Triangle4D[] clippedTriangles       = applyClipping(projectedTriangles);
+        Triangle3D[] cameraSpaceTriangles = applyCameraTransform(triangles, camera);
+        Triangle4D[] projectedTriangles = applyProjectionMatrix(cameraSpaceTriangles, zNear, zFar, fov, aspectRatio);
+        Triangle4D[] clippedTriangles = applyClipping(projectedTriangles);
         return applyPerspectiveDivide(clippedTriangles);
     }
 
     public static Triangle3D[] applyCameraTransform(Triangle3D[] triangles, Camera camera) {
-        Vec3 position = camera.getPosition();
-        Vec3 orientation = camera.getOrientation();
-
-        boolean doPositionTransform = !(position.x == 0 && position.y == 0 && position.z == 0);
-        boolean doOrientationTransform = !(orientation.x == 0 && orientation.y == 0 && orientation.z == 0);
-        if (!doPositionTransform && !doOrientationTransform)
-            return triangles;
+        // Mit -1 skaliert, um aus addition subtraktion zu machen
+        Vec3 position = camera.getPosition().scale(-1);
+        // Mit -1 skaliert, um Vertices entgegen der Kamerarotation zu drehen
+        Vec3 orientation = camera.getOrientation().scale(-1);
 
         Triangle3D[] cameraSpaceTriangles = triangles.clone();
-
-        if (doPositionTransform) {
-            position = position.scale(-1);
-            for (int i = 0; i < cameraSpaceTriangles.length; i++) {
-                Vec3[] vertices = cameraSpaceTriangles[i].getVertices();
-                cameraSpaceTriangles[i] = new Triangle3D(
-                        vertices[0].add(position),
-                        vertices[1].add(position),
-                        vertices[2].add(position)
-                );
-            }
+        for (int i = 0; i < cameraSpaceTriangles.length; i++) {
+            Vec3[] vertices = cameraSpaceTriangles[i].getVertices();
+            cameraSpaceTriangles[i] = new Triangle3D(
+                    vertices[0].add(position),
+                    vertices[1].add(position),
+                    vertices[2].add(position)
+            );
         }
 
-        if (doOrientationTransform) {
-            cameraSpaceTriangles = rotate(cameraSpaceTriangles, orientation);
-        }
-
+        cameraSpaceTriangles = rotate(cameraSpaceTriangles, orientation);
         return cameraSpaceTriangles;
     }
 
@@ -52,29 +43,30 @@ public class RenderingPipeline {
             Triangle3D[] triangles,
             double zNear, double zFar, double fov, double aspectRatio) {
         double rt = Math.tan(Math.toRadians(fov)/ 2)*zNear;
-        double xf = (2 * zNear) / (2 * rt) * aspectRatio;
-        double yf = (2 * zNear) / (2 * rt);
-        double zf = -(zFar + zNear) / (zFar - zNear) + -2 * ((zFar * zNear) / (zFar - zNear));
+
+        double xf = zNear / rt * aspectRatio;
+        double yf = zNear / rt;
+        double zf = 2 / (zFar - zNear);
+        double zs = (zFar+zNear)/(zFar-zNear);
         double wf = -1;
 
         Triangle4D[] projectedTriangles = new Triangle4D[triangles.length];
         for (int i = 0; i < triangles.length; i++) {
             Triangle3D tri3 = triangles[i];
-
             Vec4 v1 = new Vec4(
                     tri3.v1.x * xf,
                     tri3.v1.y * yf,
-                    tri3.v1.z * zf,
+                    tri3.v1.z * zf - zs,
                     tri3.v1.z * wf);
             Vec4 v2 = new Vec4(
                     tri3.v2.x * xf,
                     tri3.v2.y * yf,
-                    tri3.v2.z * zf,
+                    tri3.v2.z * zf - zs,
                     tri3.v2.z * wf);
             Vec4 v3 = new Vec4(
                     tri3.v3.x * xf,
                     tri3.v3.y * yf,
-                    tri3.v3.z * zf,
+                    tri3.v3.z * zf - zs,
                     tri3.v3.z * wf);
 
             projectedTriangles[i] = new Triangle4D(v1, v2, v3);
@@ -88,10 +80,14 @@ public class RenderingPipeline {
         for (Triangle4D triangle: triangles) {
             boolean doClip = false;
             for (Vec4 vertex: triangle.getVertices()) {
-                if (vertex.x > vertex.w) doClip = true;
-                if (-vertex.x > vertex.w) doClip = true;
-                if (vertex.y > vertex.w) doClip = true;
-                if (-vertex.y > vertex.w) doClip = true;
+                double x = vertex.x;
+                double y = vertex.y;
+                double z = vertex.z;
+                double w = vertex.w * 2;
+
+                if (Math.abs(x) > Math.abs(w)) doClip = true;
+                if (Math.abs(y) > Math.abs(w)) doClip = true;
+                if (Math.abs(z) > Math.abs(1)) doClip = true;
             }
 
             if (!doClip) clippedTriangleList.add(triangle);
