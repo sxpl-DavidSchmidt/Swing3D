@@ -7,7 +7,6 @@ import world.objects.Object3D;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
 
 public class RenderingPipeline {
     public static Triangle3D[] runPipeline(
@@ -83,7 +82,7 @@ public class RenderingPipeline {
                 double x = vertex.x;
                 double y = vertex.y;
                 double z = vertex.z;
-                double w = vertex.w * 2;
+                double w = vertex.w;
 
                 if (Math.abs(x) > Math.abs(w)) doClip = true;
                 if (Math.abs(y) > Math.abs(w)) doClip = true;
@@ -103,17 +102,17 @@ public class RenderingPipeline {
             Vec3 v1 = new Vec3(
                     tri4.v1.x / tri4.v1.w,
                     tri4.v1.y / tri4.v1.w,
-                    tri4.v1.z / tri4.v1.w);
+                    tri4.v1.z);
 
             Vec3 v2 = new Vec3(
                     tri4.v2.x / tri4.v2.w,
                     tri4.v2.y / tri4.v2.w,
-                    tri4.v2.z / tri4.v2.w);
+                    tri4.v2.z);
 
             Vec3 v3 = new Vec3(
                     tri4.v3.x / tri4.v3.w,
                     tri4.v3.y / tri4.v3.w,
-                    tri4.v3.z / tri4.v3.w);
+                    tri4.v3.z);
 
             perspectiveDivedTriangle[i] = new Triangle3D(v1, v2, v3);
         }

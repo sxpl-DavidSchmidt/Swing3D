@@ -33,22 +33,13 @@ public class Window extends JComponent {
         g.fillRect(0, 0, getWidth(), getHeight());
 
         drawObject3D(g, orientation, COLOR_ORIENTATION_OUTLINE, COLOR_ORIENTATION_FILL);
-        if (world != null) {
-            for (Object3D object: world.getWorldObjects()) {
-                drawObject3D(g, object, COLOR_OBJECT_OUTLINE, COLOR_OBJECT_FILL);
-            }
+        for (Object3D object: world.getWorldObjects()) {
+            drawObject3D(g, object, COLOR_OBJECT_OUTLINE, COLOR_OBJECT_FILL);
         }
     }
 
     private void drawObject3D(Graphics g, Object3D object, Color outlineColor, Color fillColor) {
-        Triangle3D[] triangles = RenderingPipeline.runPipeline(
-                object.getTriangles(),
-                world.getCamera(),
-                -1,
-                -100,
-                90,
-                ((double) getHeight())/getWidth()
-        );
+        Triangle3D[] triangles = RenderingPipeline.runPipeline(object.getTriangles(), world.getCamera(), -1, -100, 90, ((double) getHeight())/getWidth());
 
         for (Triangle3D triangle : triangles) {
             double width = getWidth() / 2.0;
