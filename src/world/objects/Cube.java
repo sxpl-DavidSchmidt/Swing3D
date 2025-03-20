@@ -8,10 +8,6 @@ public class Cube extends Object3D {
         super(position, orientation, size);
     }
 
-    public Cube() {
-        this(new Vec3(0, 0, 0), new Vec3(0, 0, 0), 1);
-    }
-
     @Override
     protected void initializeLocalSpaceTriangles() {
         Vec3 v1 = new Vec3(-1, -1, -1);

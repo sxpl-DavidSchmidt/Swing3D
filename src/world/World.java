@@ -8,11 +8,11 @@ import java.util.List;
 
 public class World {
     private final List<Object3D> worldObjects;
-    private final Camera camera;
+    private Camera camera;
 
     public World() {
         worldObjects = new ArrayList<>();
-        camera = new Camera(new Vec3(0, 10, 0), new Vec3(0, 0, 0));
+        camera = new Camera(new Vec3(0, 0, 0), new Vec3(0, 0, 0));
     }
 
     public void add(Object3D object3D) {
@@ -25,5 +25,9 @@ public class World {
 
     public Camera getCamera() {
         return camera;
+    }
+
+    public void setCamera(Camera camera) {
+        this.camera = camera;
     }
 }

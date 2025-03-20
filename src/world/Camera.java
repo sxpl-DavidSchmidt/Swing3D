@@ -1,25 +1,32 @@
 package world;
 
 import util.Vec3;
+import world.pathmanagers.BasicPath;
+import world.pathmanagers.PathManager;
+import world.pathmanagers.PathUtility;
 
 public class Camera {
-    private Vec3 position;
-    private Vec3 orientation;
+    private final PathManager positionManager;
+    private final PathManager orientationManager;
 
     public Camera(Vec3 position, Vec3 orientation) {
-        this.position = position;
-        this.orientation = orientation;
+        this(new BasicPath(position), new BasicPath(orientation));
     }
 
-    public Camera() {
-        this(new Vec3(0, 0, 0), new Vec3(0, 0, 0));
+    public Camera(PathManager positionManager, PathManager orientationManager) {
+        this.positionManager = positionManager;
+        this.orientationManager = orientationManager;
     }
 
     public Vec3 getPosition() {
-        return position;
+        return positionManager.getCurrentPosition(
+                PathUtility.getSyncedAnimationProgression()
+        );
     }
 
     public Vec3 getOrientation() {
-        return orientation;
+        return orientationManager.getCurrentPosition(
+                PathUtility.getSyncedAnimationProgression()
+        );
     }
 }

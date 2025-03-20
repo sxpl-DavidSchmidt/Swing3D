@@ -1,6 +1,5 @@
 package world;
 
-import util.Vec3;
 import util.Vec4;
 
 public class Triangle4D {

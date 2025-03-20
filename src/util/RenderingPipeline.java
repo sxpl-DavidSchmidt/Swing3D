@@ -76,20 +76,9 @@ public class RenderingPipeline {
 
     public static Triangle4D[] applyClipping(Triangle4D[] triangles) {
         List<Triangle4D> clippedTriangleList = new LinkedList<>();
-        for (Triangle4D triangle: triangles) {
-            boolean doClip = false;
-            for (Vec4 vertex: triangle.getVertices()) {
-                double x = vertex.x;
-                double y = vertex.y;
-                double z = vertex.z;
-                double w = vertex.w;
 
-                if (Math.abs(x) > Math.abs(w)) doClip = true;
-                if (Math.abs(y) > Math.abs(w)) doClip = true;
-                if (Math.abs(z) > Math.abs(1)) doClip = true;
-            }
-
-            if (!doClip) clippedTriangleList.add(triangle);
+        for (Triangle4D triangle : triangles) {
+            clippedTriangleList.addAll(ClippingUtility.applyPrimitiveClipping(triangle));
         }
 
         return clippedTriangleList.toArray(new Triangle4D[0]);
