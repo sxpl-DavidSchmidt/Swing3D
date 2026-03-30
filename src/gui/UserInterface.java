@@ -48,9 +48,9 @@ public class UserInterface {
         world.setCamera(
                 new Camera(
                         new SingleBezierPath(
-                                new Vec3(-20, 10, 0),
-                                new Vec3(-20, 10, 20),
-                                new Vec3(0, 10, 20)),
+                                new Vec3(-20, 7.5, 0),
+                                new Vec3(-20, 7.5, 20),
+                                new Vec3(0, 7.5, 20)),
                         new LinearPath(
                                 new Vec3(0, -0.5, 0),
                                 new Vec3(0, 0, 0))
