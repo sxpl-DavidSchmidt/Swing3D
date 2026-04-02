@@ -9,6 +9,9 @@ import world.pathmanagers.SingleBezierPath;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class UserInterface {
     public UserInterface() {
@@ -29,17 +32,13 @@ public class UserInterface {
         frame.add(window);
         frame.setVisible(true);
 
-        new Thread(() -> {
-            while (true) {
-                window.repaint();
-
-                try {
-                    Thread.sleep(20);
-                } catch (InterruptedException ex) {
-                    System.out.println("Failed to sleep thread");
-                }
-            }
-        }).start();
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleAtFixedRate(
+                window::repaint,
+                0,
+                1000 / 60,
+                TimeUnit.MILLISECONDS
+        );
     }
 
     private static World getWorld() {
